@@ -248,3 +248,340 @@ scenarios:
         expect_error:
           type: "UserError"
           message_contains: "not linked to any employee"
+
+  - name: "Employee Self-Service - Cancel a confirmed request as the employee"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service c1"
+          login: "edc_service_c1"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User c1"
+          login: "edc_employee_c1"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address c1"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee c1"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create the request of the employee"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "CAN-c1"
+
+      - step: "Confirm the request"
+        action: "call"
+        target: "request"
+        method: "action_confirm"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request waits for approval"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "confirm"
+
+      - step: "Cancel the request as the service account"
+        action: "call"
+        target: "request"
+        method: "self_service_cancel_request"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - "REC: request.id"
+
+      - step: "The request is cancelled by the employee"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "cancel"
+          write_uid:
+            type: "m2o"
+            expected: "REC: employee_user"
+
+  - name: "Employee Self-Service - A request of another employee cannot be cancelled"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service c2"
+          login: "edc_service_c2"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User c2"
+          login: "edc_employee_c2"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address c2"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee c2"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create the request of the employee"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "CAN-c2"
+
+      - step: "Create another employee"
+        action: "create"
+        model: "hr.employee"
+        save_as: "other_employee"
+        values:
+          name: "EDC Other Employee c2"
+
+      - step: "Create the request of the other employee"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "other_request"
+        values:
+          employee_id: "REC: other_employee.id"
+          new_identification_id: "OTHER-c2"
+
+      - step: "Cancelling the request of another employee is refused"
+        action: "call"
+        target: "request"
+        method: "self_service_cancel_request"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - "REC: other_request.id"
+        expect_error:
+          type: "AccessError"
+
+      - step: "The request of the other employee is untouched"
+        action: "assert"
+        target: "other_request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "draft"
+
+  - name: "Employee Self-Service - A done request cannot be cancelled"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service c3"
+          login: "edc_service_c3"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User c3"
+          login: "edc_employee_c3"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address c3"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee c3"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create the request of the employee"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "CAN-c3"
+
+      - step: "Confirm the request"
+        action: "call"
+        target: "request"
+        method: "action_confirm"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request waits for approval"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "confirm"
+
+      - step: "Approve the request"
+        action: "call"
+        target: "request"
+        method: "action_approve_approval"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request is done"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "done"
+
+      - step: "Cancelling a done request is refused"
+        action: "call"
+        target: "request"
+        method: "self_service_cancel_request"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - "REC: request.id"
+        expect_error:
+          type: "UserError"
+
+      - step: "The request stays done"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "done"
+
+  - name: "Employee Self-Service - List and cancel need the service group"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service c4"
+          login: "edc_service_c4"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User c4"
+          login: "edc_employee_c4"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address c4"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee c4"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create the request of the employee"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "CAN-c4"
+
+      - step: "Listing as the employee user is refused"
+        action: "call"
+        target: "request"
+        method: "self_service_list_request"
+        as_user: "employee_user"
+        args:
+          - "REC: employee_user.id"
+        expect_error:
+          type: "AccessError"
+
+      - step: "Cancelling as the employee user is refused"
+        action: "call"
+        target: "request"
+        method: "self_service_cancel_request"
+        as_user: "employee_user"
+        args:
+          - "REC: employee_user.id"
+          - "REC: request.id"
+        expect_error:
+          type: "AccessError"
+
+      - step: "The request is untouched"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "draft"

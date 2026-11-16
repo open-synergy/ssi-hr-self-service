@@ -21,6 +21,13 @@ service account in the group *Employee Self-Service API*. Every write is
 made as the employee, so the audit trail shows the employee and not the
 service account.
 
+Besides the editable data, the read method returns view-only employment
+data: employment status, join date, permanent date, job grade, and the tax
+ID of the private address partner. The application can also list the
+requests of the employee, and cancel a request that is still a draft or
+waiting for approval. A request of another employee is never listed and
+cannot be cancelled.
+
 
 Work Instruction
 ================

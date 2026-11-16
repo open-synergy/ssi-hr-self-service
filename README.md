@@ -17,7 +17,11 @@ Employee self-service: data change requests and self-service API
 
 [//]: # (addons)
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[ssi_hr_employee_data_change](ssi_hr_employee_data_change/) | 14.0.1.0.1 |  | Employee Data Change Request
 
 [//]: # (end addons)
 

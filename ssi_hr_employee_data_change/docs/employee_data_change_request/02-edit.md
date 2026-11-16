@@ -19,8 +19,8 @@
 
 1. Open the **Human Resource > Employees > Employee Data Change Request** menu.
 2. Find and open the record to edit.
-3. Change **Employee** as needed. The **Previous** values are taken again from the new
-   employee when the record is saved.
+3. Change **Employee** (and, while in **Draft**, **Date**) as needed. The **Previous**
+   values are taken again from the new employee when the record is saved.
 4. Change the **New** values in the **Personal Data** tab, and the lines of the
    **Children** and **Academic History** tabs, as needed.
 5. Click **Save**.

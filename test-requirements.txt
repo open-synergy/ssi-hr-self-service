@@ -1,5 +1,6 @@
 odoo-yaml-test
 odoo14-addon-ssi-hr
+odoo14-addon-ssi-hr-employee
 odoo14-addon-ssi-hr-employee-personal-from-work-address
 odoo14-addon-ssi-hr-employee-experience-from-work-address
 odoo14-addon-ssi-transaction-confirm-mixin

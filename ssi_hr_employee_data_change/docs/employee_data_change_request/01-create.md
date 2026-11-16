@@ -33,6 +33,8 @@
 3. Fill in the required fields:
    - **Employee** _(required)_: Automatically filled from the current user's linked
      employee record, if any. Change if needed.
+   - **Date** _(required)_: Automatically filled with today's date. Change if needed; it
+     is read-only after the record leaves **Draft**.
    - **Department**, **Manager**, **Job Position**: Automatically filled from
      **Employee**. Read-only.
 4. Open the **Personal Data** tab. Fill in only the fields to change in the **New**

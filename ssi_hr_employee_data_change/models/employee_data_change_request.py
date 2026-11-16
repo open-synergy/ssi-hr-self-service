@@ -24,6 +24,14 @@ CHANGE_FIELDS = [
     "image_1920",
 ]
 
+# Employee fields returned by ``self_service_read`` for viewing only.
+VIEW_ONLY_FIELDS = [
+    "employment_status_id",
+    "date_join",
+    "date_permanent",
+    "job_grade_id",
+]
+
 # Keys of ``self_service_write_contact`` written to the private partner.
 CONTACT_PARTNER_KEYS = {
     "street": "street",
@@ -63,8 +71,8 @@ class EmployeeDataChangeRequest(models.Model):
     line is written to the employee and the private partner of the
     employee.
 
-    The model also exposes three public ``@api.model`` methods that
-    an external self-service application calls through a service
+    The model also exposes public ``@api.model`` methods that an
+    external self-service application calls through a service
     account. They run as the employee, never as the service account.
     """
 
@@ -145,6 +153,16 @@ class EmployeeDataChangeRequest(models.Model):
         :return: selection list of ``hr.employee.certificate``
         """
         return self.env["hr.employee"]._fields["certificate"].selection
+
+    date = fields.Date(
+        string="Date",
+        required=True,
+        default=lambda self: fields.Date.context_today(self),
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        copy=False,
+        help="Date of the data change request. Defaults to today.",
+    )
 
     # Previous values (snapshot of the employee)
     old_identification_id = fields.Char(
@@ -549,7 +567,10 @@ Solution: Link an employee to the user, then try again
         key ``labels`` maps each field name to its English label, and
         selection fields have an extra ``<name>_label`` key. Many2one
         values are ``[id, name]``, dates are ISO strings. The photo is
-        returned as the small ``image_128`` thumbnail.
+        returned as the small ``image_128`` thumbnail. The keys
+        ``employment_status_id``, ``date_join``, ``date_permanent``,
+        ``job_grade_id`` and ``vat`` (tax id of the private partner)
+        are view-only data.
 
         Python test only: ``P1`` and ``L-01`` (the YAML ``call`` action
         drops the return value of a method).
@@ -578,7 +599,7 @@ Solution: Link an employee to the user, then try again
             "has_private_address": bool(partner),
         }
         labels = {}
-        for name in CHANGE_FIELDS:
+        for name in CHANGE_FIELDS + VIEW_ONLY_FIELDS:
             if name == "image_1920":
                 continue
             field = employee._fields[name]
@@ -598,6 +619,8 @@ Solution: Link an employee to the user, then try again
             if partner and partner._fields[partner_key].type == "many2one":
                 value = self._self_service_name(value)
             result[key] = value or False
+        result["vat"] = (partner.vat or False) if partner else False
+        labels["vat"] = _("Tax ID (NPWP/NIK)")
         result["children"] = [
             {
                 "id": child.id,
@@ -781,3 +804,110 @@ Solution: Use only %s
         # is made as the user and not by a later caller.
         request.flush()
         return request.id
+
+    @api.model
+    def _self_service_summary(self, request):
+        """Return the labels of what a request changes.
+
+        :param request: one ``employee_data_change_request`` record
+        :return: list of the labels of the filled ``new_*`` fields,
+            followed by ``Child: N`` and ``Academic: N`` when there
+            are lines
+        """
+        employee = request.employee_id
+        summary = []
+        for name in CHANGE_FIELDS:
+            if request["new_%s" % name]:
+                summary.append(employee._fields[name].string)
+        if request.child_ids:
+            summary.append("Child: %s" % len(request.child_ids))
+        if request.academic_ids:
+            summary.append("Academic: %s" % len(request.academic_ids))
+        return summary
+
+    @api.model
+    def self_service_list_request(self, user_id):
+        """Return the data change requests of the employee of a user.
+
+        Public self-service method. The environment is ``sudo`` and so
+        skips the record rules; the domain on the employee is what
+        scopes the result, so requests of other employees are never
+        returned. Newest first. The key ``date`` is the ``date`` field of
+        the request.
+
+        Python test only: ``P1`` and ``L-01`` (the YAML ``call`` action
+        drops the return value of a method).
+
+        :param int user_id: id of the user to list the requests of
+        :return: list of dicts with ``id``, ``name``, ``state``,
+            ``state_label``, ``date``, ``create_date`` and ``summary``
+        :raises AccessError: if the caller is not a service account
+        :raises UserError: if the user has no employee
+        """
+        scoped, employee = self._self_service_scope(user_id)
+        requests = scoped.search([("employee_id", "=", employee.id)], order="id desc")
+        result = []
+        for request in requests:
+            created = request.create_date
+            result.append(
+                {
+                    "id": request.id,
+                    "name": request.name,
+                    "state": request.state,
+                    "state_label": self._self_service_selection_label(request, "state"),
+                    "date": fields.Date.to_string(request.date) or False,
+                    "create_date": created.isoformat() if created else False,
+                    "summary": self._self_service_summary(request),
+                }
+            )
+        return result
+
+    @api.model
+    def self_service_cancel_request(self, user_id, request_id):
+        """Cancel a data change request of the employee of a user.
+
+        Public self-service method. Only a request of the employee of
+        the user can be cancelled, and only in state ``draft`` or
+        ``confirm``. The answer for a missing request and for a request
+        of another employee is the same. The cancel runs as the user
+        with the cancel policy bypassed, because the service account,
+        not the employee, is the actor; no cancel reason is set.
+
+        Python test only: ``P1`` and ``L-01`` (the YAML ``call`` action
+        drops the return value of a method).
+
+        :param int user_id: id of the user to cancel the request for
+        :param int request_id: id of the request to cancel
+        :return: True
+        :raises AccessError: if the caller is not a service account, or
+            the request does not exist or belongs to another employee
+        :raises UserError: if the user has no employee, or the request
+            is not in state ``draft`` or ``confirm``
+        """
+        scoped, employee = self._self_service_scope(user_id)
+        request = scoped.browse(request_id).exists()
+        if not request or request.employee_id.id != employee.id:
+            error_message = """
+Context: Employee self-service cancel request
+Database ID: %s
+Problem: The request is not available for this user
+Solution: Use the id of a request of the employee of the user
+""" % (
+                request_id,
+            )
+            raise AccessError(_(error_message))
+        if request.state not in ("draft", "confirm"):
+            error_message = """
+Context: Employee self-service cancel request
+Database ID: %s
+Problem: Only a draft or confirmed request can be cancelled
+Solution: Leave a request in another state as it is
+""" % (
+                request_id,
+            )
+            raise UserError(_(error_message))
+        request.with_context(bypass_policy_check=True).action_cancel()
+        # Flush inside the scoped environment so every pending write
+        # is made as the user and not by a later caller.
+        request.flush()
+        return True

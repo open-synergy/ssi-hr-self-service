@@ -21,7 +21,7 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
-[ssi_hr_employee_data_change](ssi_hr_employee_data_change/) | 14.0.1.0.1 |  | Employee Data Change Request
+[ssi_hr_employee_data_change](ssi_hr_employee_data_change/) | 14.0.1.1.0 |  | Employee Data Change Request
 
 [//]: # (end addons)
 

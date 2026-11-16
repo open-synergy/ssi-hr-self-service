@@ -1,0 +1,250 @@
+scenarios:
+  - name: "Employee Self-Service - Write contact is made as the employee"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service w1"
+          login: "edc_service_w1"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User w1"
+          login: "edc_employee_w1"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address w1"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee w1"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create a request that hosts the model method"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "HOST-w1"
+
+      - step: "Write the contact data as the service account"
+        action: "call"
+        target: "request"
+        method: "self_service_write_contact"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - street: "Jalan Baru 1"
+            phone: "02112345"
+            private_email: "edc.w1@example.com"
+            emergency_phone: "0812000111"
+
+      - step: "The private partner carries the contact data and the employee as writer"
+        action: "assert"
+        target: "partner"
+        refresh: true
+        asserts:
+          street:
+            type: "value"
+            expected: "Jalan Baru 1"
+          phone:
+            type: "value"
+            expected: "02112345"
+          email:
+            type: "value"
+            expected: "edc.w1@example.com"
+          write_uid:
+            type: "m2o"
+            expected: "REC: employee_user"
+
+      - step: "The employee carries the emergency phone and the employee as writer"
+        action: "assert"
+        target: "employee"
+        refresh: true
+        asserts:
+          emergency_phone:
+            type: "value"
+            expected: "0812000111"
+          write_uid:
+            type: "m2o"
+            expected: "REC: employee_user"
+
+  - name: "Employee Self-Service - A key outside the whitelist is refused"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service w2"
+          login: "edc_service_w2"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User w2"
+          login: "edc_employee_w2"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address w2"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee w2"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create a request that hosts the model method"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "HOST-w2"
+
+      - step: "Writing the work phone is refused"
+        action: "call"
+        target: "request"
+        method: "self_service_write_contact"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - street: "Must Not Persist"
+            work_phone: "02199999"
+        expect_error:
+          type: "ValidationError"
+          message_contains: "work_phone"
+
+      - step: "Nothing was written to the partner"
+        action: "assert"
+        target: "partner"
+        refresh: true
+        asserts:
+          street:
+            type: "value"
+            operator: "is_falsy"
+
+  - name: "Employee Self-Service - A caller without the group is refused"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service w3"
+          login: "edc_service_w3"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User w3"
+          login: "edc_employee_w3"
+
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "partner"
+        values:
+          name: "EDC Private Address w3"
+          type: "private"
+
+      - step: "Create the employee of the user"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee"
+        values:
+          name: "EDC Employee w3"
+          user_id: "REC: employee_user.id"
+          address_home_id: "REC: partner.id"
+
+      - step: "Create a request that hosts the model method"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "HOST-w3"
+
+      - step: "The employee user is not a service account"
+        action: "call"
+        target: "request"
+        method: "self_service_write_contact"
+        as_user: "employee_user"
+        args:
+          - "REC: employee_user.id"
+          - street: "Must Not Persist"
+        expect_error:
+          type: "AccessError"
+
+  - name: "Employee Self-Service - A user without employee is refused"
+    steps:
+      - step: "Create the service account"
+        action: "create"
+        model: "res.users"
+        save_as: "service_user"
+        values:
+          name: "EDC Service w4"
+          login: "edc_service_w4"
+          groups_id:
+            - [4, "REF: ssi_hr_employee_data_change.group_employee_self_service_api"]
+
+      - step: "Create the user of the employee"
+        action: "create"
+        model: "res.users"
+        save_as: "employee_user"
+        values:
+          name: "EDC Employee User w4"
+          login: "edc_employee_w4"
+
+      - step: "Create a request that hosts the model method"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REF: hr.employee_admin"
+          new_identification_id: "HOST-w4"
+
+      - step: "The user has no employee"
+        action: "call"
+        target: "request"
+        method: "self_service_write_contact"
+        as_user: "service_user"
+        args:
+          - "REC: employee_user.id"
+          - street: "Must Not Persist"
+        expect_error:
+          type: "UserError"
+          message_contains: "not linked to any employee"

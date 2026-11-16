@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 OpenSynergy Indonesia
+     Copyright 2026 PT. Simetri Sinergi Indonesia
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+    <record id="employee_data_change_request_view_search" model="ir.ui.view">
+        <field name="name">employee_data_change_request - search</field>
+        <field name="model">employee_data_change_request</field>
+        <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_search"
+        />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <data>
+                <xpath expr="//field[@name='company_id']" position="after">
+                    <field name="employee_id" />
+                    <field name="department_id" />
+                    <field name="manager_id" />
+                    <field name="job_id" />
+                </xpath>
+                <xpath expr="//filter[@name='grp_responsible']" position="after">
+                    <filter
+                        name="grp_employee_id"
+                        string="Employee"
+                        context="{'group_by':'employee_id'}"
+                    />
+                    <filter
+                        name="grp_department_id"
+                        string="Department"
+                        context="{'group_by':'department_id'}"
+                    />
+                </xpath>
+            </data>
+        </field>
+    </record>
+
+    <record id="employee_data_change_request_view_tree" model="ir.ui.view">
+        <field name="name">employee_data_change_request - tree</field>
+        <field name="model">employee_data_change_request</field>
+        <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_tree"
+        />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <data>
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="employee_id" />
+                    <field name="department_id" optional="hide" />
+                    <field
+                        name="manager_id"
+                        widget="many2one_avatar_employee"
+                        optional="hide"
+                    />
+                    <field name="job_id" optional="hide" />
+                </xpath>
+            </data>
+        </field>
+    </record>
+
+    <record id="employee_data_change_request_view_form" model="ir.ui.view">
+        <field name="name">employee_data_change_request - form</field>
+        <field name="model">employee_data_change_request</field>
+        <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_form"
+        />
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <data>
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="employee_id" />
+                </xpath>
+                <xpath expr="//group[@name='header_right']" position="inside">
+                    <field name="department_id" readonly="1" force_save="1" />
+                    <field
+                        name="manager_id"
+                        widget="many2one_avatar_employee"
+                        readonly="1"
+                        force_save="1"
+                    />
+                    <field name="job_id" readonly="1" force_save="1" />
+                </xpath>
+                <xpath expr="//page[1]" position="before">
+                    <page name="change" string="Personal Data">
+                        <group name="change_1" colspan="4" col="2">
+                            <group
+                                name="change_1_1"
+                                colspan="1"
+                                col="2"
+                                string="Previous"
+                            >
+                            <field name="old_identification_id" force_save="1" />
+                            <field name="old_place_of_birth" force_save="1" />
+                            <field name="old_birthday" force_save="1" />
+                            <field name="old_gender" force_save="1" />
+                            <field name="old_marital" force_save="1" />
+                            <field name="old_spouse_complete_name" force_save="1" />
+                            <field name="old_spouse_birthdate" force_save="1" />
+                            <field
+                                    name="old_religion_id"
+                                    options='{"no_open": True, "no_create": True}'
+                                    force_save="1"
+                                />
+                            <field name="old_certificate" force_save="1" />
+                            <field
+                                    name="old_image_1920"
+                                    widget="image"
+                                    options='{"size": [90, 90]}'
+                                />
+                            </group>
+                            <group name="change_1_2" colspan="1" col="2" string="New">
+                            <field name="new_identification_id" />
+                            <field name="new_place_of_birth" />
+                            <field name="new_birthday" />
+                            <field name="new_gender" />
+                            <field name="new_marital" />
+                            <field name="new_spouse_complete_name" />
+                            <field name="new_spouse_birthdate" />
+                            <field
+                                    name="new_religion_id"
+                                    options='{"no_open": True, "no_create": True}'
+                                />
+                            <field name="new_certificate" />
+                            <field
+                                    name="new_image_1920"
+                                    widget="image"
+                                    options='{"size": [90, 90]}'
+                                />
+                            </group>
+                        </group>
+                    </page>
+                    <page name="child" string="Children">
+                        <field name="child_ids">
+                            <tree editable="bottom">
+                                <field name="name" />
+                                <field name="birthdate_date" />
+                                <field name="gender" />
+                            </tree>
+                            <form>
+                                <group name="child_1" colspan="4" col="2">
+                                    <field name="name" />
+                                    <field name="birthdate_date" />
+                                    <field name="gender" />
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                    <page name="academic" string="Academic History">
+                        <field name="academic_ids">
+                            <tree editable="bottom">
+                                <field name="name" />
+                                <field name="education_level_id" />
+                                <field name="field_of_study_id" />
+                                <field name="date_start" />
+                                <field name="date_end" />
+                                <field name="diploma" />
+                                <field name="gpa" />
+                            </tree>
+                            <form>
+                                <group name="academic_1" colspan="4" col="2">
+                                    <group name="academic_1_1" colspan="1" col="2">
+                                        <field name="name" />
+                                        <field name="education_level_id" />
+                                        <field name="field_of_study_id" />
+                                    </group>
+                                    <group name="academic_1_2" colspan="1" col="2">
+                                        <field name="date_start" />
+                                        <field name="date_end" />
+                                        <field name="diploma" />
+                                        <field name="gpa" />
+                                    </group>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                </xpath>
+            </data>
+        </field>
+    </record>
+
+    <record id="employee_data_change_request_action" model="ir.actions.act_window">
+        <field name="name">Employee Data Change Request</field>
+        <field name="res_model">employee_data_change_request</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="employee_data_change_request_menu"
+        parent="ssi_hr.hr_employee_menu"
+        action="employee_data_change_request_action"
+        groups="employee_data_change_request_viewer_group"
+        sequence="20"
+    />
+</odoo>

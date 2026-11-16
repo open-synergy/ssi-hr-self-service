@@ -1,0 +1,348 @@
+setup:
+  steps:
+    - step: "Create the private address partner of the employee"
+      action: "create"
+      model: "res.partner"
+      save_as: "partner"
+      values:
+        name: "EDC Employee Private Address"
+        type: "private"
+        birth_city: "Old City"
+        birthdate_date: 1990-01-01
+        gender: "male"
+        marital: "single"
+
+    - step: "Create the employee that owns the data"
+      action: "create"
+      model: "hr.employee"
+      save_as: "employee"
+      values:
+        name: "EDC Employee"
+        address_home_id: "REC: partner.id"
+        identification_id: "OLD-ID-001"
+        certificate: "bachelor"
+
+scenarios:
+  - name: "Employee Data Change Request - Create takes the snapshot"
+    steps:
+      - step: "Create the request with new values"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "NEW-ID-001"
+          new_marital: "married"
+
+      - step: "Request is a draft and keeps the previous employee values"
+        action: "assert"
+        target: "request"
+        asserts:
+          state:
+            type: "value"
+            expected: "draft"
+          old_identification_id:
+            type: "value"
+            expected: "OLD-ID-001"
+          old_place_of_birth:
+            type: "value"
+            expected: "Old City"
+          old_birthday:
+            type: "value"
+            expected: 1990-01-01
+          old_gender:
+            type: "value"
+            expected: "male"
+          old_marital:
+            type: "value"
+            expected: "single"
+          old_certificate:
+            type: "value"
+            expected: "bachelor"
+          new_identification_id:
+            type: "value"
+            expected: "NEW-ID-001"
+
+  - name: "Employee Data Change Request - Confirm without private address is refused"
+    steps:
+      - step: "Create an employee without private address partner"
+        action: "create"
+        model: "hr.employee"
+        save_as: "employee_no_partner"
+        values:
+          name: "EDC Employee Without Partner"
+
+      - step: "Create the request"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee_no_partner.id"
+          new_identification_id: "NEW-ID-002"
+
+      - step: "Confirm is refused because the employee has no private address"
+        action: "call"
+        target: "request"
+        method: "action_confirm"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+        expect_error:
+          type: "ValidationError"
+          message_contains: "no private address"
+
+  - name: "Employee Data Change Request - Confirm without any change is refused"
+    steps:
+      - step: "Create an empty request"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+
+      - step: "Confirm is refused because nothing changes"
+        action: "call"
+        target: "request"
+        method: "action_confirm"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+        expect_error:
+          type: "ValidationError"
+          message_contains: "does not contain any change"
+
+  - name: "Employee Data Change Request - Approval applies every change"
+    steps:
+      - step: "Create the new religion"
+        action: "create"
+        model: "res_partner_religion"
+        save_as: "religion"
+        values:
+          name: "EDC New Religion"
+          code: "/"
+
+      - step: "Create the request with every kind of change"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "NEW-ID-003"
+          new_place_of_birth: "New City"
+          new_birthday: 1992-05-06
+          new_gender: "female"
+          new_marital: "married"
+          new_spouse_complete_name: "EDC Spouse Name"
+          new_spouse_birthdate: 1991-03-04
+          new_religion_id: "REC: religion.id"
+          new_certificate: "master"
+          new_image_1920: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+          child_ids:
+            - [
+                0,
+                0,
+                {
+                  name: "EDC Child Applied",
+                  birthdate_date: "2020-02-02",
+                  gender: "male",
+                },
+              ]
+          academic_ids:
+            - [
+                0,
+                0,
+                {
+                  name: "EDC University Applied",
+                  date_start: "2010-08-01",
+                  date_end: "2014-07-01",
+                  diploma: "DIP-001",
+                  gpa: 3.5,
+                },
+              ]
+
+      - step: "Confirm the request"
+        action: "call"
+        target: "request"
+        method: "action_confirm"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request waits for approval"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "confirm"
+
+      - step: "Approve the request"
+        action: "call"
+        target: "request"
+        method: "action_approve_approval"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request is done"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "done"
+
+      - step: "The employee carries the new values"
+        action: "assert"
+        target: "employee"
+        refresh: true
+        asserts:
+          identification_id:
+            type: "value"
+            expected: "NEW-ID-003"
+          certificate:
+            type: "value"
+            expected: "master"
+          birthday:
+            type: "value"
+            expected: 1992-05-06
+          marital:
+            type: "value"
+            expected: "married"
+          religion_id:
+            type: "m2o"
+            expected: "REC: religion"
+          image_1920:
+            type: "value"
+            operator: "not_equals"
+            expected: "REC: request.old_image_1920"
+
+      - step: "The private address partner follows the related fields"
+        action: "assert"
+        target: "partner"
+        refresh: true
+        asserts:
+          birth_city:
+            type: "value"
+            expected: "New City"
+          birthdate_date:
+            type: "value"
+            expected: 1992-05-06
+          gender:
+            type: "value"
+            expected: "female"
+          marital:
+            type: "value"
+            expected: "married"
+          spouse_complete_name:
+            type: "value"
+            expected: "EDC Spouse Name"
+          spouse_birthdate:
+            type: "value"
+            expected: 1991-03-04
+          religion_id:
+            type: "m2o"
+            expected: "REC: religion"
+
+      - step: "The employee has exactly one child"
+        action: "assert"
+        target: "employee"
+        refresh: true
+        asserts:
+          children_ids:
+            type: "m2m"
+            check: "count"
+            expected_count: 1
+
+      - step: "Find the child partner"
+        action: "search"
+        model: "res.partner"
+        domain:
+          - ["name", "=", "EDC Child Applied"]
+        save_as: "child"
+        limit: 1
+        expect_count: 1
+
+      - step: "The child has the requested data and the employee as mother"
+        action: "assert"
+        target: "child"
+        asserts:
+          gender:
+            type: "value"
+            expected: "male"
+          birthdate_date:
+            type: "value"
+            expected: 2020-02-02
+          mother_id:
+            type: "m2o"
+            expected: "REC: partner"
+
+      - step: "Find the academic history of the private partner"
+        action: "search"
+        model: "partner.academic"
+        domain:
+          - ["partner_id", "=", "REC: partner.id"]
+          - ["name", "=", "EDC University Applied"]
+        save_as: "academic"
+        limit: 1
+        expect_count: 1
+
+      - step: "The academic history keeps the start date"
+        action: "assert"
+        target: "academic"
+        asserts:
+          date_start:
+            type: "value"
+            expected: 2010-08-01
+          date_end:
+            type: "value"
+            expected: 2014-07-01
+          diploma:
+            type: "value"
+            expected: "DIP-001"
+
+  - name: "Employee Data Change Request - Cancel and restart"
+    steps:
+      - step: "Create the request"
+        action: "create"
+        model: "employee_data_change_request"
+        save_as: "request"
+        values:
+          employee_id: "REC: employee.id"
+          new_identification_id: "NEW-ID-004"
+
+      - step: "Cancel the request"
+        action: "call"
+        target: "request"
+        method: "action_cancel"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request is cancelled"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "cancel"
+
+      - step: "Restart the request"
+        action: "call"
+        target: "request"
+        method: "action_restart"
+        as_user: "base.user_admin"
+        context:
+          bypass_policy_check: true
+
+      - step: "Request is a draft again"
+        action: "assert"
+        target: "request"
+        refresh: true
+        asserts:
+          state:
+            type: "value"
+            expected: "draft"

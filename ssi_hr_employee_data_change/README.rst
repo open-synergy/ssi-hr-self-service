@@ -23,7 +23,8 @@ service account.
 
 Besides the editable data, the read method returns view-only employment
 data: employment status, join date, permanent date, job grade, and the tax
-ID of the private address partner. The application can also list the
+ID and the BPJS Health and BPJS Employment numbers of the private
+address partner. The application can also list the
 requests of the employee, and cancel a request that is still a draft or
 waiting for approval. A request of another employee is never listed and
 cannot be cancelled.

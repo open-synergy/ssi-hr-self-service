@@ -47,6 +47,7 @@
             <data>
                 <xpath expr="//field[@name='user_id']" position="after">
                     <field name="employee_id" />
+                    <field name="date" />
                     <field name="department_id" optional="hide" />
                     <field
                         name="manager_id"
@@ -71,6 +72,7 @@
             <data>
                 <xpath expr="//field[@name='user_id']" position="after">
                     <field name="employee_id" />
+                    <field name="date" />
                 </xpath>
                 <xpath expr="//group[@name='header_right']" position="inside">
                     <field name="department_id" readonly="1" force_save="1" />

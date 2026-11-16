@@ -4,6 +4,7 @@
 
 from odoo_yaml_test import YamlTransactionCase
 
+from odoo import fields
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 
@@ -166,6 +167,8 @@ class TestEmployeeSelfServiceReturnValue(YamlTransactionCase):
             self.assertIn(key, item)
         self.assertEqual(item["state"], "draft")
         self.assertEqual(item["state_label"], "Draft")
+        today = fields.Date.to_string(fields.Date.context_today(second))
+        self.assertEqual(item["date"], today)
         self.assertIn("Identification No", " ".join(item["summary"]))
         self.assertIn("Place of Birth", " ".join(item["summary"]))
         self.assertEqual(len(item["summary"]), 2)
@@ -192,6 +195,18 @@ class TestEmployeeSelfServiceReturnValue(YamlTransactionCase):
         self.assertEqual(len(result), 1)
         self.assertIn("Child: 2", result[0]["summary"])
         self.assertIn("Academic: 1", result[0]["summary"])
+
+    def test_self_service_list_request_date(self):
+        """Return the ``date`` field of the request, not ``create_date``.
+
+        Pure Python - trigger P1 (L-01: the ``call`` action discards the
+        return value of a method, so YAML cannot assert it at all).
+        """
+        request = self._create_request(self.employee_a)
+        request.write({"date": "2020-05-17"})
+        result = self.model.self_service_list_request(self.user_a.id)
+        self.assertEqual(result[0]["date"], "2020-05-17")
+        self.assertNotEqual(result[0]["date"], result[0]["create_date"][:10])
 
     def test_self_service_list_request_empty(self):
         """Return an empty list for an employee without requests.
@@ -288,6 +303,7 @@ class TestEmployeeSelfServiceReturnValue(YamlTransactionCase):
         self.assertEqual(request.create_uid, self.user_a)
         self.assertEqual(request.state, "confirm")
         self.assertEqual(request.old_identification_id, False)
+        self.assertEqual(request.date, fields.Date.context_today(request))
 
     def test_self_service_write_uid(self):
         """Write the contact as the user, so ``write_uid`` is not the service.

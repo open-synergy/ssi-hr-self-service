@@ -154,6 +154,16 @@ class EmployeeDataChangeRequest(models.Model):
         """
         return self.env["hr.employee"]._fields["certificate"].selection
 
+    date = fields.Date(
+        string="Date",
+        required=True,
+        default=lambda self: fields.Date.context_today(self),
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        copy=False,
+        help="Date of the data change request. Defaults to today.",
+    )
+
     # Previous values (snapshot of the employee)
     old_identification_id = fields.Char(
         string="Previous Identification No",
@@ -822,8 +832,8 @@ Solution: Use only %s
         Public self-service method. The environment is ``sudo`` and so
         skips the record rules; the domain on the employee is what
         scopes the result, so requests of other employees are never
-        returned. Newest first. The key ``date`` is the date part of
-        ``create_date``, the day the request was submitted.
+        returned. Newest first. The key ``date`` is the ``date`` field of
+        the request.
 
         Python test only: ``P1`` and ``L-01`` (the YAML ``call`` action
         drops the return value of a method).
@@ -845,7 +855,7 @@ Solution: Use only %s
                     "name": request.name,
                     "state": request.state,
                     "state_label": self._self_service_selection_label(request, "state"),
-                    "date": fields.Date.to_string(created) or False,
+                    "date": fields.Date.to_string(request.date) or False,
                     "create_date": created.isoformat() if created else False,
                     "summary": self._self_service_summary(request),
                 }

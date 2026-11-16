@@ -688,6 +688,9 @@ Solution: Fill the Private Address of the employee first
             partner.write(partner_vals)
         if employee_vals:
             employee.write(employee_vals)
+        # Flush inside the scoped environment so no stored recompute
+        # stays pending and gets written later as another user.
+        employee.flush()
         return True
 
     @api.model
@@ -774,4 +777,7 @@ Solution: Use only %s
         values["user_id"] = scoped.env.uid
         request = scoped.create(values)
         request.with_context(bypass_policy_check=True).action_confirm()
+        # Flush inside the scoped environment so every pending write
+        # is made as the user and not by a later caller.
+        request.flush()
         return request.id

@@ -123,6 +123,18 @@ msgid "Attachment Count"
 msgstr ""
 
 #. module: ssi_hr_employee_data_change
+#: code:addons/ssi_hr_employee_data_change/models/employee_data_change_request.py:0
+#, python-format
+msgid "BPJS Employment"
+msgstr ""
+
+#. module: ssi_hr_employee_data_change
+#: code:addons/ssi_hr_employee_data_change/models/employee_data_change_request.py:0
+#, python-format
+msgid "BPJS Health"
+msgstr ""
+
+#. module: ssi_hr_employee_data_change
 #: model:ir.model.fields,help:ssi_hr_employee_data_change.field_employee_data_change_request_child__birthdate_date
 msgid "Birth date of the child."
 msgstr ""

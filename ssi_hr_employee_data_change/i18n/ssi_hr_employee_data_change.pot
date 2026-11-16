@@ -258,6 +258,11 @@ msgid "Data change request that adds this child."
 msgstr ""
 
 #. module: ssi_hr_employee_data_change
+#: model:ir.model.fields,field_description:ssi_hr_employee_data_change.field_employee_data_change_request__date
+msgid "Date"
+msgstr ""
+
+#. module: ssi_hr_employee_data_change
 #: model:ir.model.fields,field_description:ssi_hr_employee_data_change.field_employee_data_change_request_academic__date_end
 msgid "Date End"
 msgstr ""
@@ -270,6 +275,11 @@ msgstr ""
 #. module: ssi_hr_employee_data_change
 #: model:ir.model.fields,help:ssi_hr_employee_data_change.field_employee_data_change_request__old_birthday
 msgid "Date of birth of the employee before the change."
+msgstr ""
+
+#. module: ssi_hr_employee_data_change
+#: model:ir.model.fields,help:ssi_hr_employee_data_change.field_employee_data_change_request__date
+msgid "Date of the data change request. Defaults to today."
 msgstr ""
 
 #. module: ssi_hr_employee_data_change
@@ -888,6 +898,12 @@ msgid ""
 "Overdue: Due date is already passed\n"
 "Today: Activity date is today\n"
 "Planned: Future activities."
+msgstr ""
+
+#. module: ssi_hr_employee_data_change
+#: code:addons/ssi_hr_employee_data_change/models/employee_data_change_request.py:0
+#, python-format
+msgid "Tax ID (NPWP/NIK)"
 msgstr ""
 
 #. module: ssi_hr_employee_data_change

@@ -183,7 +183,9 @@ class TestEmployeeSelfServiceReturnValue(YamlTransactionCase):
                     (0, 0, {"name": "P1 Child 1", "birthdate_date": "2020-02-02"}),
                     (0, 0, {"name": "P1 Child 2", "birthdate_date": "2021-03-03"}),
                 ],
-                "academic_ids": [(0, 0, {"name": "P1 University"})],
+                "academic_ids": [
+                    (0, 0, {"name": "P1 University", "date_start": "2015-08-01"})
+                ],
             }
         )
         result = self.model.self_service_list_request(self.user_a.id)

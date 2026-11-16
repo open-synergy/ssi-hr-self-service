@@ -585,3 +585,31 @@ scenarios:
           state:
             type: "value"
             expected: "draft"
+
+  - name: "Employee Self-Service - BPJS number of the private partner"
+    steps:
+      - step: "Create the private address partner"
+        action: "create"
+        model: "res.partner"
+        save_as: "bpjs_partner"
+        values:
+          name: "EDC Private Address bpjs"
+          type: "private"
+
+      - step: "Create the BPJS Health number of the partner"
+        action: "create"
+        model: "res.partner.id_number"
+        values:
+          partner_id: "REC: bpjs_partner.id"
+          category_id:
+            "REF:
+            ssi_l10n_id_partner_identification_bpjs.partner_identification_bpjs_kesehatan"
+          name: "BPJS-YAML-1"
+
+      - step: "The partner exposes the BPJS Health number"
+        action: "assert"
+        target: "bpjs_partner"
+        asserts:
+          bpjs_kesehatan_number:
+            type: "value"
+            expected: "BPJS-YAML-1"

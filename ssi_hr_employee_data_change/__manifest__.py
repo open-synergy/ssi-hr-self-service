@@ -20,6 +20,7 @@
         "ssi_hr_employee_personal_from_work_address",
         "ssi_hr_employee_experience_from_work_address",
         "ssi_employee_document_mixin",
+        "ssi_l10n_id_partner_identification_bpjs",
         "ssi_transaction_confirm_mixin",
         "ssi_transaction_done_mixin",
         "ssi_transaction_cancel_mixin",

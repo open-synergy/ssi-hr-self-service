@@ -570,7 +570,9 @@ Solution: Link an employee to the user, then try again
         returned as the small ``image_128`` thumbnail. The keys
         ``employment_status_id``, ``date_join``, ``date_permanent``,
         ``job_grade_id`` and ``vat`` (tax id of the private partner)
-        are view-only data.
+        are view-only data, as are ``bpjs_kesehatan_number`` and
+        ``bpjs_ketenagakerjaan_number`` (BPJS numbers of the private
+        partner).
 
         Python test only: ``P1`` and ``L-01`` (the YAML ``call`` action
         drops the return value of a method).
@@ -621,6 +623,12 @@ Solution: Link an employee to the user, then try again
             result[key] = value or False
         result["vat"] = (partner.vat or False) if partner else False
         labels["vat"] = _("Tax ID (NPWP/NIK)")
+        for key, label in (
+            ("bpjs_kesehatan_number", _("BPJS Health")),
+            ("bpjs_ketenagakerjaan_number", _("BPJS Employment")),
+        ):
+            result[key] = (partner[key] or False) if partner else False
+            labels[key] = label
         result["children"] = [
             {
                 "id": child.id,

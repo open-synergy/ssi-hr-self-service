@@ -146,8 +146,61 @@ class TestEmployeeSelfServiceReturnValue(YamlTransactionCase):
             "date_join",
             "date_permanent",
             "vat",
+            "bpjs_kesehatan_number",
+            "bpjs_ketenagakerjaan_number",
         ):
             self.assertIs(data[key], False)
+
+    def test_self_service_read_bpjs(self):
+        """Return the BPJS numbers of the private partner of the employee.
+
+        Pure Python - trigger P1 (L-01: the ``call`` action discards the
+        return value of a method, so YAML cannot assert it at all).
+        """
+        partner = self.employee_a.address_home_id
+        self._create_bpjs_number(
+            partner, "partner_identification_bpjs_kesehatan", "KES-A"
+        )
+        self._create_bpjs_number(
+            partner, "partner_identification_bpjs_ketenagakerjaan", "KER-A"
+        )
+        data = self.model.self_service_read(self.user_a.id)
+        self.assertEqual(data["bpjs_kesehatan_number"], "KES-A")
+        self.assertEqual(data["bpjs_ketenagakerjaan_number"], "KER-A")
+        self.assertEqual(data["labels"]["bpjs_kesehatan_number"], "BPJS Health")
+        self.assertEqual(
+            data["labels"]["bpjs_ketenagakerjaan_number"], "BPJS Employment"
+        )
+        self.assertEqual(data["vat"], "VAT-A")
+        other = self.model.self_service_read(self.user_b.id)
+        self.assertIs(other["bpjs_kesehatan_number"], False)
+        self.assertIs(other["bpjs_ketenagakerjaan_number"], False)
+
+    def test_self_service_read_bpjs_empty(self):
+        """Return ``False`` for the BPJS numbers when there is no partner.
+
+        Pure Python - trigger P1 (L-01: the ``call`` action discards the
+        return value of a method, so YAML cannot assert it at all).
+        """
+        self.employee_a.write({"address_home_id": False})
+        data = self.model.self_service_read(self.user_a.id)
+        self.assertIs(data["bpjs_kesehatan_number"], False)
+        self.assertIs(data["bpjs_ketenagakerjaan_number"], False)
+
+    def _create_bpjs_number(self, partner, category_xmlid, number):
+        """Create an identification number of a BPJS category.
+
+        :param partner: partner that owns the number
+        :param str category_xmlid: xml id of the category, without module
+        :param str number: the identification number
+        :return: the new identification number
+        """
+        category = self.env.ref(
+            "ssi_l10n_id_partner_identification_bpjs.%s" % category_xmlid
+        )
+        return self.env["res.partner.id_number"].create(
+            {"partner_id": partner.id, "category_id": category.id, "name": number}
+        )
 
     def test_self_service_list_request(self):
         """List the requests of the user's employee only, newest first.
